@@ -1,14 +1,40 @@
 
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 import datetime
 
-st.set_page_config(page_title="Console courte en béton armé", layout="centered")
+def create_scaled_diagram(Fed, Hed, b, h, d1):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    scale = 100  # pour convertir m → cm visuellement
 
+    console_rect = plt.Rectangle((0, 0), b * scale, h * scale, fill=None, edgecolor='black', linewidth=2)
+    ax.add_patch(console_rect)
+
+    ax.annotate(f'b = {b} m', xy=(b * scale / 2, -5), ha='center')
+    ax.annotate(f'h = {h} m', xy=(-5, h * scale / 2), va='center', rotation='vertical')
+
+    ax.arrow(b * scale / 2, h * scale, 0, -20, head_width=5, head_length=5, fc='red', ec='red')
+    ax.text(b * scale / 2 + 5, h * scale - 10, f"Fed = {Fed} kN", color='red', va='center')
+
+    if Hed != 0:
+        ax.arrow(b * scale, h * scale / 2, -20, 0, head_width=5, head_length=5, fc='blue', ec='blue')
+        ax.text(b * scale - 25, h * scale / 2 + 5, f"Hed = {Hed} kN", color='blue')
+
+    ax.hlines(d1 * scale, 0, b * scale, colors='gray', linestyles='dotted')
+    ax.text(b * scale + 5, d1 * scale, f"d1 = {d1} m", color='gray', va='bottom')
+
+    ax.set_xlim(-10, b * scale + 30)
+    ax.set_ylim(-20, h * scale + 20)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    plt.tight_layout()
+    return fig
+
+st.set_page_config(page_title="Console courte en béton armé", layout="centered")
 st.title("Calcul d'une console courte en béton armé")
 st.markdown("Entrez les paramètres ci-dessous pour effectuer le calcul :")
 
-# Formulaire d'entrée
 with st.form("parametres_console"):
     col1, col2 = st.columns(2)
 
@@ -37,6 +63,11 @@ if submitted:
 
     ok = "✅ Dimensionnement OK" if Md <= Rd_max else "❌ Dimensionnement NON vérifié"
     st.success(ok if Md <= Rd_max else ok)
+
+    # Afficher le schéma
+    st.subheader("Schéma de la console (mise à l'échelle)")
+    fig = create_scaled_diagram(Fed, Hed, b, h, d1)
+    st.pyplot(fig)
 
     # Export résultats
     st.subheader("Exporter les résultats")
